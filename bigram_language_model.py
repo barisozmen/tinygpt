@@ -69,7 +69,8 @@ class MultiHeadSelfAttention(nn.Module):
 
     def forward(self, x):
         out = torch.cat([h(x) for h in self.self_attention_heads], dim=-1)
-        out = self.dropout(self.proj(out))
+        out = self.proj(out)
+        out = self.dropout(out)
         return out
 
 class PositionwiseFeedForward(nn.Module):
@@ -95,14 +96,15 @@ class TransformerBlock(nn.Module):
         head_size = n_embd // n_head
         self.attention = MultiHeadSelfAttention(n_head, head_size)
         self.feed_forward = PositionwiseFeedForward(n_embd)
-        self.norm1 = nn.LayerNorm(n_embd)
-        self.norm2 = nn.LayerNorm(n_embd)
+        self.layer_norm_1 = nn.LayerNorm(n_embd) # https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
+        self.layer_norm_2 = nn.LayerNorm(n_embd)
 
     def forward(self, x):
-        # Apply self-attention and add residual
-        x = x + self.attention(self.norm1(x))
-        # Apply feed-forward network and add residual
-        x = x + self.feed_forward(self.norm2(x))
+        # Apply self-attention and add residual connection (aka skip connection). 
+        # Adding residual connections idea comes from the "Deep Residual Learning for Image Recognition" paper (https://arxiv.org/abs/1512.03385). It helps to train very deep networks, make them easier to optimize.
+        x = x + self.attention(self.layer_norm_1(x)) # In the original "Attention All You Need" paper, the layer normalization is applied after the self attention. With the advences in the field (by 2024 January), it is now common to apply layer normalization before the self attention.
+        # same above
+        x = x + self.feed_forward(self.layer_norm_2(x))
         return x
 
 class BigramLanguageModel(LanguageModel):
