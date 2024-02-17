@@ -7,11 +7,12 @@ from torch.utils.data import Dataset, DataLoader
 
 from dataset import TextEncodingDataset, CharLevelEncoder
 from bigram_language_model import BigramLanguageModel
-from config import Config
-from utils import Batch
+from config import the_config
+from batch import Batch
 
 
-config = Config()
+config = the_config() # Singleton class to store all hyperparameters and global variables
+
 
 config.set(
     batch_size = 16, # number of independent sequences to train on in parallel

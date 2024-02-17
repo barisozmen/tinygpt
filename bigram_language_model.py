@@ -2,11 +2,41 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from config import Config
+from config import the_config
 from language_model import LanguageModel
 
+"""
+Inspired from Andrej Karpathy's famous video "Let's build GPT: from scratch, in code, spelled out." - https://www.youtube.com/watch?v=kCc8FmEb1nY
 
-config = Config()
+Below are the pytorch.nn modules used in this code and their explanations:
+- nn.Module --> Base class for all neural network modules. Your models should also subclass this class.
+- nn.Linear --> Applies a linear transformation to the incoming data: y = xA^T + b. Used for the key, query, and value transformations in the SelfAttentionHead. Also used in the feedforward layers.
+- nn.ModuleList -->  Holds a list of modules. Used to hold the multiple SelfAttentionHead instances in the MultiHeadSelfAttention module.
+- nn.Dropout -->  Randomly zeroes some of the elements of the input tensor with probability p. Used for regularization and preventing overfitting.
+- nn.LayerNorm -->  Applies layer normalization over a mini-batch of inputs. Helps stabilize learning. Used before self-attention and feedforward layers.
+- nn.Sequential -->  Chains a sequence of modules together. Used to chain the feedforward neural network layers.
+- nn.Embedding -->  Maps integers (vocabulary indices) to vectors of a fixed dimension. Used to lookup token and position embeddings.
+- nn.Linear -->  Maps input to output in a linear fashion. Used in the final language modeling head to map to vocabulary size.
+- F.cross_entropy -->  Applies cross entropy loss between logits and targets. Used to calculate language modeling loss.
+- F.softmax -->  Applies softmax over given dimension. Used to convert logits to probabilities.
+- torch.multinomial -->  Samples from a multinomial distribution. Used to sample the next token from the network's predicted token probabilities.
+
+
+Below are papers and resources that explain the concepts used in this code:
+- "Attention is All You Need" (https://arxiv.org/abs/1706.03762) -> main paper for the transformer architecture
+- "Deep Residual Learning for Image Recognition" (https://arxiv.org/abs/1512.03385) -> residual connections
+- "Layer Normalization" (https://arxiv.org/abs/1607.06450)
+- "Dropout: A Simple Way to Prevent Neural Networks from Overfitting" (https://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
+
+This is a decoder-only transformer model. It lacks encoder and cross-attention modules from the original paper - attention is all you need. Karpathy explains what is left out and why at https://youtu.be/kCc8FmEb1nY?si=pBIqxDI3jxZyEx0I&t=6160. 
+- The reason the original paper has an encoder-decoder architecture is that it is designed for machine translation tasks. The decoder-only architecture is used for language modeling tasks.
+- The encoder makes the model pre-conditioned on a given data (text for this case), such as in machine translation
+- The original paper uses cross-attention to allow the decoder to attend to the encoder's output. This is useful for tasks like machine translation, where the decoder needs to attend to the input sentence to generate the output sentence.
+
+"""
+
+
+config = the_config()
 
 class SelfAttentionHead(nn.Module):
     """ one head of self-attention
@@ -23,7 +53,10 @@ class SelfAttentionHead(nn.Module):
 
     def __init__(self, head_size):
         super().__init__()
-        # Every element (corresponding to a token) in the input sequence emits three vectors: key (what do I contain) and query (what am I looking for), and value (what do I communicate to others).
+        # Every element (corresponding to a token) in the input sequence emits three vectors: 
+        # - key (what do I contain)
+        # - query (what am I looking for)
+        # - and value (what do I communicate to others).
 
         # nn.Linear applies a linear transformation to the incoming data: y = xA^T + b
         self.key = nn.Linear(config.n_embd, head_size, bias=False)
@@ -60,7 +93,6 @@ class MultiHeadSelfAttention(nn.Module):
     
     Holds a list of SelfAttentionHead instances and projects the concatenated outputs to the desired dimension.
     """
-
     def __init__(self, num_heads, head_size):
         super().__init__()
         self.self_attention_heads = nn.ModuleList([SelfAttentionHead(head_size) for _ in range(num_heads)])
@@ -103,14 +135,12 @@ class TransformerBlock(nn.Module):
         # Apply self-attention and add residual connection (aka skip connection). 
         # Adding residual connections idea comes from the "Deep Residual Learning for Image Recognition" paper (https://arxiv.org/abs/1512.03385). It helps to train very deep networks, make them easier to optimize.
         x = x + self.attention(self.layer_norm_1(x)) # In the original "Attention All You Need" paper, the layer normalization is applied after the self attention. With the advences in the field (by 2024 January), it is now common to apply layer normalization before the self attention.
-        # same above
-        x = x + self.feed_forward(self.layer_norm_2(x))
+        x = x + self.feed_forward(self.layer_norm_2(x)) # same above
         return x
 
 class BigramLanguageModel(LanguageModel):
     def __init__(self, encoder):
         super().__init__(encoder)
-        
         # Each token looks up the logits for the next token from token_embedding_table
         # nn.Embedding layer maps integers (vocab indices) to vectors of a fixed dimension
         self.token_embedding_table = nn.Embedding(encoder.n_vocab, config.n_embd)
@@ -122,7 +152,7 @@ class BigramLanguageModel(LanguageModel):
         self.transformer_blocks = nn.Sequential(*[TransformerBlock(config.n_embd, n_head=config.n_head) for _ in range(config.n_layer)])
 
         # Final layer norm 
-        self.final_norm = nn.LayerNorm(config.n_embd) # final layer norm
+        self.final_norm = nn.LayerNorm(config.n_embd)
 
         # Language modeling head. Maps last transformer block output to vocab size
         self.lm_head = nn.Linear(config.n_embd, encoder.n_vocab)
