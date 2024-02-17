@@ -28,4 +28,4 @@ class LanguageModel(MyModel):
     
     def print_model_description(self):
         super().print_model_description()
-        print(f"[Text Encoder] name={self.encoder.name}, n_vocab={self.encoder.n_vocab}")
+        print(f"[Text Encoder] name={self.encoder.name}, vocab_size={self.encoder.vocab_size}")

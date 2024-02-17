@@ -8,7 +8,8 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
-from dataset import TextEncodingDataset, CharLevelEncoder
+from dataset import TextEncodingDataset
+from encoder import make_encoder
 from bigram_language_model import BigramLanguageModel
 from config import the_config
 from batch import Batch
@@ -30,14 +31,15 @@ config.set(
     n_head = 8, # number of heads in the multiheadattention models
     n_layer = 8, # number of sub-encoder-layers in the encoder
     dropout = 0.1, # dropout probability
-    encoder_type = 'gpt2',
+    encoder_type = 'minimal_gpt2',
+    token_freq_threshold = 4, # minimum frequency of a token to be included in the vocabulary
     torch_seed = 42, # random seed for reproducibility
 )
 
 with open('tiny_jules_verne.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
-encoder = CharLevelEncoder(text) if config.encoder_type == 'char_level' else tiktoken.get_encoding('gpt2')
+encoder = make_encoder(text)
 dataset  = TextEncodingDataset(text, encoder)
 # train_loader = DataLoader(dataset.train, batch_size=config.batch_size, shuffle=True)
 # val_loader = DataLoader(dataset.validation, batch_size=config.batch_size, shuffle=True)

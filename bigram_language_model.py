@@ -143,7 +143,7 @@ class BigramLanguageModel(LanguageModel):
         super().__init__(encoder)
         # Each token looks up the logits for the next token from token_embedding_table
         # nn.Embedding layer maps integers (vocab indices) to vectors of a fixed dimension
-        self.token_embedding_table = nn.Embedding(encoder.n_vocab, config.n_embd)
+        self.token_embedding_table = nn.Embedding(encoder.vocab_size, config.n_embd)
 
         # Position embeddings are learned representations for position in the sequence
         self.position_embedding_table = nn.Embedding(config.block_size, config.n_embd)
@@ -155,7 +155,7 @@ class BigramLanguageModel(LanguageModel):
         self.final_norm = nn.LayerNorm(config.n_embd)
 
         # Language modeling head. Maps last transformer block output to vocab size
-        self.lm_head = nn.Linear(config.n_embd, encoder.n_vocab)
+        self.lm_head = nn.Linear(config.n_embd, encoder.vocab_size)
 
     def forward(self, idx, targets=None):
         B, T = idx.shape

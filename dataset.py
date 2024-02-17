@@ -5,20 +5,7 @@ from itertools import cycle, islice
 
 from config import the_config
 
-
 config = the_config()
-
-
-class CharLevelEncoder:
-    def __init__(self, text):
-        self.chars = sorted(list(set(text))) # all the unique characters
-        self.n_vocab = len(self.chars)
-        self.stoi = { ch:i for i, ch in enumerate(self.chars) }
-        self.itos = { i:ch for i, ch in enumerate(self.chars) }
-        self.encode = lambda s: [self.stoi[c] for c in s]
-        self.decode = lambda l: ''.join([self.itos[i] for i in l])
-
-
 
 class TextEncodingDataset(Dataset):
     def __init__(self, text, enc, verbose=True):
@@ -33,7 +20,7 @@ class TextEncodingDataset(Dataset):
             print(f"example tokens:           {(example_tokens:=list(self.train[200:210].numpy()))}")
             print(f"example tokens (decoded): {[enc.decode([tok]) for tok in example_tokens]}")
             print()
-            print(f'Encoder-> n_vocab:{enc.n_vocab}, name:{enc.name}')
+            print(f'Encoder-> vocab_size:{enc.vocab_size}, name:{enc.name}')
             print('-'*70)
 
     def __len__(self):

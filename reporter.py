@@ -17,12 +17,10 @@ class BaseReporter(ABC):
     def __init__(self, treporter):
         self.treporter = treporter
 
-    def start(self):
-        pass
+    def start(self): pass
 
     @abstractmethod
-    def report(self):
-        pass
+    def report(self): pass
 
     def should_report(self, iter):
         return iter % config.eval_interval == 0 or iter >= config.max_iters
