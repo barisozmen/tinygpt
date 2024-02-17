@@ -16,7 +16,7 @@ class Encoder(ABC):
 
     def _make(self, tokens):
         tokens = sorted(tokens)
-        self.n_vocab = len(tokens)
+        self.vocab_size = len(tokens)
         self.stoi = { ch:i for i, ch in enumerate(tokens) }
         self.itos = { i:ch for i, ch in enumerate(tokens) }
         self.encode = lambda s: [self.stoi[c] for c in s]
@@ -55,12 +55,17 @@ def minimizer(enc, text):
     original_encode = enc.encode
     original_decode = enc.decode
 
+    old2new = { num:i for i, num in enumerate(minimized_token_integers) }
+    new2old = { i:num for i, num in enumerate(minimized_token_integers) }
+
     def new_encode(text):
         res = original_encode(text)
-        return [k if k in minimized_token_integers else random.choice(list(minimized_token_integers)) for k in res]
+        res = [k if k in minimized_token_integers else random.choice(list(minimized_token_integers)) for k in res]
+        res = [old2new[k] for k in res]
+        return res
 
     def new_decode(nums):
-        nums = [k if k in minimized_token_integers else random.choice(list(minimized_token_integers)) for k in nums]
+        nums = [new2old[k] for k in nums]
         return original_decode(nums)
 
     enc.encode = new_encode
@@ -69,16 +74,20 @@ def minimizer(enc, text):
 
     return enc
 
+def adapter(enc):
+    enc.vocab_size = enc.n_vocab
+    return enc
+
 def make_encoder(text):
     match config.encoder_type:
         case 'char_level':
             enc = CharLevelEncoder(text)
         case 'gpt2':
-            enc = tiktoken.get_encoding('gpt2')
+            enc = adapter(tiktoken.get_encoding('gpt2'))
         case 'minimal_gpt2' | _:
-            enc = minimizer(tiktoken.get_encoding('gpt2'), text)
+            enc = minimizer(adapter(tiktoken.get_encoding('gpt2')), text)
 
-    for attr in ['n_vocab', 'encode', 'decode']:
+    for attr in ['vocab_size', 'encode', 'decode']:
         assert hasattr(enc, attr)
 
     return enc

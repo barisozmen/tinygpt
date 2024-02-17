@@ -19,7 +19,7 @@ from reporter import TrainingReporter
 config = the_config() # Singleton class to store all hyperparameters and global variables
 
 config.set(
-    batch_size = 16, # number of independent sequences to train on in parallel
+    batch_size = 64, # number of independent sequences to train on in parallel
     block_size = 512, # max content lenght for predictions
     max_iters = 10000000,
     eval_interval = 100,

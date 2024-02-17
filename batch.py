@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from random import shuffle
 import math
 import numpy as np
@@ -9,15 +11,19 @@ from config import the_config
 
 config = the_config()
 
+@dataclass
 class Batch:
-    def __init__(self, dataset, encoder):
-        self.train_dict = self._make_data_dict(dataset.train)
-        self.validation_dict = self._make_data_dict(dataset.validation)
-        self.encoder = encoder
+    dataset: object
+    encoder: object
+    recorder: object
+    def __post_init__(self):
+        self.train_dict = self._make_data_dict(self.dataset.train)
+        self.validation_dict = self._make_data_dict(self.dataset.validation)
 
     def generator(self):
         while True:
             x, y = Batch.get_pseudo_random_batch(self.train_dict)
+            self.recorder.record(['batch_generated', x, y])
             yield x, y
         
     @staticmethod

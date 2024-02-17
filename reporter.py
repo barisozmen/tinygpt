@@ -9,6 +9,7 @@ import torch
 
 from config import the_config
 from batch import Batch
+from recorder import Recorder
 
 config = the_config()
 
@@ -23,7 +24,7 @@ class BaseReporter(ABC):
     def report(self): pass
 
     def should_report(self, iter):
-        return iter % config.eval_interval == 0 or iter >= config.max_iters
+        return iter % config.eval_interval == 0 or iter >= config.max_iters or iter in [0, 5, 10, 20, 50]
 
 class Timer(BaseReporter):
     def __init__(self, treporter):
@@ -76,6 +77,7 @@ class Oneirocritic(BaseReporter):
 class TrainingReporter(contextlib.ContextDecorator):
     model: torch.nn.Module
     batch: Batch
+    recorder: Recorder
     iter: int = 0
 
     def __post_init__(self):
