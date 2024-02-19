@@ -9,7 +9,7 @@ import torch
 
 from config import the_config
 from batch import Batch
-from recorder import Recorder
+
 
 config = the_config()
 
@@ -77,7 +77,6 @@ class Oneirocritic(BaseReporter):
 class TrainingReporter(contextlib.ContextDecorator):
     model: torch.nn.Module
     batch: Batch
-    recorder: Recorder
     iter: int = 0
 
     def __post_init__(self):

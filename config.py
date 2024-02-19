@@ -1,9 +1,12 @@
-_the_config = None
+
 
 class Config:
     def set(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+
+_the_config = None
 
 def the_config():
     global _the_config

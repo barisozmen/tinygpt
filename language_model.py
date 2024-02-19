@@ -1,23 +1,36 @@
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 
+
+
+
 from config import the_config
+from recorder import the_recorder
 
 config = the_config()
+recorder = the_recorder()
 
 # nn.Module is base class for all pytorch neural network modules
 class MyModel(nn.Module):
-    def __init__(self):
-        super().__init__()
+
+    def forward(self, *args, **kwargs):
+        res = self._forward(*args, **kwargs)
+        recorder.forward_completed(config)
+        return res
+
 
     def print_model_description(self):
         print('\n'); print(self); print('\n')
         print(f"Number of parameters: {sum(p.numel() for p in self.parameters())/1e6} Million\n")
         print("Hyperparameters: ", vars(config), '\n')
 
+    
+
 class LanguageModel(MyModel):
-    def __init__(self, encoder):
-        super().__init__()
+    def __init__(self, encoder, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.encoder = encoder
 
     def dream_text(self, max_new_tokens=2000, verbose=False):
