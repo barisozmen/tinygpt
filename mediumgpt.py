@@ -8,6 +8,7 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 from torch.autograd.profiler import profile as torch_profile
+from torch.profiler import profile, record_function, ProfilerActivity
 
 from dataset import TextEncodingDataset
 from encoder import make_encoder
@@ -17,6 +18,9 @@ from config import the_config
 
 from batch import Batch
 from reporter import TrainingReporter
+
+
+from debugger import LinePrinting
 
 
 
@@ -60,20 +64,26 @@ batches = batch.generator()
 training_reporter = TrainingReporter(model, batch)
 
 
-for _ in range(config.max_iters):
+# for _ in range(config.max_iters):
+for _ in range(50):
     with training_reporter:
-        x, y = next(batches)
-        logits, loss = model(x, y)
-        logits: Tensor; loss: Tensor
-        optimizer.zero_grad(set_to_none=True) # clears out the old gradients
-        loss.backward() # calculates new gradients and stores in ``.grad`` attribute of each parameter (torch.nn.parameter.Parameter), ready for the optimizer to use.
-        optimizer.step() # updates the parameters using the .grad attribute of each parameter. remember that we instantiated the optimizer with the model parameters, so it knows which parameters to update.
+        # with LinePrinting():
+            with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True, with_flops=True, with_modules=True, with_stack=True) as prof:
+                with record_function("model_training"):
+                    x, y = next(batches)
+                    logits, loss = model(x, y)
+                    logits: Tensor; loss: Tensor
+                    optimizer.zero_grad(set_to_none=True) # clears out the old gradients
+                    loss.backward() # calculates new gradients and stores in ``.grad`` attribute of each parameter (torch.nn.parameter.Parameter), ready for the optimizer to use.
+                    optimizer.step() # updates the parameters using the .grad attribute of each parameter. remember that we instantiated the optimizer with the model parameters, so it knows which parameters to update.
+
+print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=20))
 
 
 
 
 
-model.dream_text(verbose=True, max_new_tokens=10000)
+model.dream_text(verbose=True)
 
 pass
 

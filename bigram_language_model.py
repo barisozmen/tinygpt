@@ -109,10 +109,13 @@ class PositionwiseFeedForward(nn.Module):
     """Implements a two-layer feed-forward network."""
     def __init__(self, n_embd, ffwd_expansion=4):
         super().__init__()
+        ffwd_width = ffwd_expansion * n_embd
         self.net = nn.Sequential(
-            nn.Linear(n_embd, ffwd_expansion * n_embd),
+            nn.Linear(n_embd, ffwd_width),
             nn.ReLU(),
-            nn.Linear(4 * n_embd, n_embd),
+            nn.Linear(ffwd_width, ffwd_width),
+            nn.ReLU(),
+            nn.Linear(ffwd_width, n_embd),
             nn.Dropout(config.dropout),
         )
 
